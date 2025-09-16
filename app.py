@@ -54,8 +54,7 @@ def previsao(interpreter, image):
 
 def main():
     st.set_page_config(
-        page_title="Classifica Folhas",
-    )
+        page_title="Classifica Folhas")
 
     st.write("# Classifica Folhas")
 

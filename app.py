@@ -9,9 +9,10 @@ import plotly.express as px
 
 @st.cache_resource
 def carrega_modelo():
-    url = 'https://drive.google.com/uc?if=1mRBi8viBDsECE4cecfzKPBkkuNlv1umf'
+    # Corrigi o link do Google Drive (era "if=1..." mas o correto é "id=")
+    url = 'https://drive.google.com/uc?id=1mRBi8viBDsECE4cecfzKPBkkuNlv1umf'
 
-    gdown.download(url, 'modelo_quantizado16bits.tflite')
+    gdown.download(url, 'modelo_quantizado16bits.tflite', quiet=False)
     interpreter = tf.lite.Interpreter(model_path='modelo_quantizado16bits.tflite')
     interpreter.allocate_tensors()
 
@@ -29,41 +30,50 @@ def carrega_imagem():
 
         image = np.array(image, dtype=np.float32)
         image = image / 255.0
-        image = np.expand_dims(image,axis=0)
+        image = np.expand_dims(image, axis=0)
+
+        return image  # Corrigido: função agora retorna a imagem processada
+
+    return None  # Caso não haja upload
 
 def previsao(interpreter, image):
-
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
 
     interpreter.set_tensor(input_details[0]['index'], image)
-
     interpreter.invoke()
 
-    output_details = interpreter.get_tensor(output_details[0['index']])
+    # Corrigido: nome da variável e acesso ao índice
+    output_data = interpreter.get_tensor(output_details[0]['index'])
+
     classes = ['BlackMeasles', 'BlackRot', 'HealthyGrapes', 'LeafBlight']
 
     df = pd.DataFrame()
     df['classes'] = classes
+    df['probabilidades (%)'] = 100 * output_data[0]
 
-    df['probabilidades (%)'] = 100*output_data[0]
-
-    fig = px.bar(df, y='classes', x='probabilidade (%)', orientation='h', text = 'probabilidades (%)',
-                 title = 'Probabilidade de Classe na Uva')
+    # Corrigido: nome da coluna no gráfico
+    fig = px.bar(
+        df, 
+        y='classes', 
+        x='probabilidades (%)', 
+        orientation='h', 
+        text='probabilidades (%)',
+        title='Probabilidade de Classe na Uva'
+    )
     st.plotly_chart(fig)
 
 def main():
-    st.set_page_config(
-        page_title="Classifica Folhas")
+    st.set_page_config(page_title="Classifica Folhas")
 
     st.write("# Classifica Folhas")
 
     interpreter = carrega_modelo()
-
     image = carrega_imagem()
 
-    if image is not Note:
-        previsao(interpreter,image)
+    # Corrigido: "Note" → "None"
+    if image is not None:
+        previsao(interpreter, image)
 
 if __name__ == "__main__":
     main()
